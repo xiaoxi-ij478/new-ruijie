@@ -12,7 +12,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-g" />
+					<Add option="-ggdb3" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -21,7 +21,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-Os" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -30,10 +30,53 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-fexceptions" />
+			<Add option="-std=gnu11" />
 		</Compiler>
+		<Unit filename="encrypt/d3des.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="encrypt/d3des.h" />
+		<Unit filename="encrypt/rc4.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="encrypt/rc4.h" />
+		<Unit filename="hash/ampheck.h" />
+		<Unit filename="hash/byte_order.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/byte_order.h" />
+		<Unit filename="hash/crc16.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/md5.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/md5.h" />
+		<Unit filename="hash/ripemd128.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/ripemd128.h" />
+		<Unit filename="hash/sha1.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/sha1.h" />
+		<Unit filename="hash/tiger.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/tiger.h" />
+		<Unit filename="hash/tiger_sbox.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/ustd.h" />
+		<Unit filename="hash/whirlpool.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="hash/whirlpool.h" />
+		<Unit filename="hash/whirlpool_sbox.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="main.c">
-			<Option compilerVar="CPP" />
+			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>
 			<lib_finder disable_auto="1" />
