@@ -21,9 +21,11 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-flto" />
 					<Add option="-Os" />
 				</Compiler>
 				<Linker>
+					<Add option="-flto" />
 					<Add option="-s" />
 				</Linker>
 			</Target>
@@ -32,6 +34,16 @@
 			<Add option="-Wall" />
 			<Add option="-std=gnu11" />
 		</Compiler>
+		<Unit filename="common.h" />
+		<Unit filename="const.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="direct_comm.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="eap.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="encrypt/d3des.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -76,6 +88,15 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="net.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="stages.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="util.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>
