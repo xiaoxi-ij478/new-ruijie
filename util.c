@@ -88,6 +88,15 @@ int append_private_properties(
 )
 {
     unsigned char *local_buf = (unsigned char *)buf;
+    struct IPInfo ipinfo;
+    struct sockaddr hwaddr;
+
+    if (get_interface_addr(app_info->net_interface_name, &ipinfo) == -1)
+        return -1;
+
+    if (get_interface_hwaddr(app_info->net_interface_name, &hwaddr) == -1)
+        return -1;
+
 #define CHECK_BUFSIZ(size) do { if (*bufpos + (size) >= bufsiz) { fputs("buffer will overflow\n", stderr); return -1; } } while (0)
 #define PUT_U32(val) do { CHECK_BUFSIZ(4); *(uint32_t *)(&local_buf[*bufpos]) = htonl(val); *bufpos += 4; } while (0)
 #define PUT_U16(val) do { CHECK_BUFSIZ(2); *(uint16_t *)(&local_buf[*bufpos]) = htons(val); *bufpos += 2; } while (0)
@@ -99,10 +108,6 @@ int append_private_properties(
 #define PUT_STRING_WITH_PADDING(str, len) do { CHECK_BUFSIZ(len); strncpy((char *)&local_buf[*bufpos], (str), (len)); *bufpos += (len); } while (0)
 #define PUT_STRING_WITH_NULL(str) do { CHECK_BUFSIZ(strlen(str) + 1); strcpy((char *)&local_buf[*bufpos], (str)); *bufpos += strlen(str) + 1; } while (0)
     {
-        struct IPInfo ipinfo;
-
-        if (get_interface_addr(app_info->net_interface_name, &ipinfo) == -1)
-            return -1;
 
         PUT_U32(0x1311);
         PUT_U8(1); // dhcp enabled
@@ -140,12 +145,8 @@ int append_private_properties(
     MAKE_PRIVATE_PROPERTY(4, 0x18) {
         PUT_U32(0x01); // dhcp enabled
     }
+
     MAKE_PRIVATE_PROPERTY(6, 0x2D) {
-        struct sockaddr hwaddr;
-
-        if (get_interface_hwaddr(app_info->net_interface_name, &hwaddr) == -1)
-            return -1;
-
         for (unsigned i = 0; i < 6; i++)
             PUT_U8(hwaddr.sa_data[i]);
     }
@@ -154,8 +155,7 @@ int append_private_properties(
         md5_ctx ctx;
         unsigned orig_password_len = strlen(app_info->password);
         unsigned aligned_password_len = (orig_password_len + 15) & ~15;
-        char *outbuf = malloc(aligned_password_len);
-        char tmpbuf[16];
+        unsigned char tmpbuf[16];
         memcpy(tmpbuf, app_info->md5_challenge, 16);
         MAKE_PRIVATE_PROPERTY(aligned_password_len, 0x2F) {
             for (unsigned i = 0; i < aligned_password_len; i += 16) {
@@ -165,12 +165,10 @@ int append_private_properties(
                 rhash_md5_final(&ctx, tmpbuf);
 
                 for (unsigned j = 0; j < 16; j++) {
-                    tmpbuf[j] ^= (i >= orig_password_len ? 0 : app_info->password[i]);
+                    tmpbuf[j] ^= i >= orig_password_len ? 0 : app_info->password[i];
                     PUT_U8(tmpbuf[j]);
                 }
             }
-
-            free(outbuf);
         }
 
     } else {
@@ -181,31 +179,26 @@ int append_private_properties(
     MAKE_PRIVATE_PROPERTY(0, 0x76) {
         // alternative dnses, just assume to be none
     }
+
     MAKE_PRIVATE_PROPERTY(1, 0x35) {
-        PUT_U8(2);
+        PUT_U8(0);
     }
+
     MAKE_PRIVATE_PROPERTY(16, 0x36) {
         for (unsigned i = 0; i < 16; i++)
             PUT_U8(0);
     }
+
     MAKE_PRIVATE_PROPERTY(16, 0x38) {
-        struct IPInfo ipinfo;
-
-        if (get_interface_addr(app_info->net_interface_name, &ipinfo) == -1)
-            return -1;
-
         for (unsigned i = 0; i < 16; i++)
-            PUT_U8(ipinfo.local_v6addr.sin6_addr.s6_addr[i]);
+            PUT_U8(0);
     }
+
     MAKE_PRIVATE_PROPERTY(16, 0x4E) {
-        struct IPInfo ipinfo;
-
-        if (get_interface_addr(app_info->net_interface_name, &ipinfo) == -1)
-            return -1;
-
         for (unsigned i = 0; i < 16; i++)
-            PUT_U8(ipinfo.global_v6addr.sin6_addr.s6_addr[i]);
+            PUT_U8(0);
     }
+
     MAKE_PRIVATE_PROPERTY(128, 0x4D) {
         if (app_info->responsing_md5_challenge) {
             char whbuf[1000] = { 0 };
@@ -264,8 +257,7 @@ int append_private_properties(
                     }
 
                 case 2: {
-                        unsigned char shash[20];
-                        unsigned char rihash[16];
+                        unsigned char shash[20], rihash[16];
                         sha1_ctx sctx;
                         struct ampheck_ripemd128 rctx;
                         rhash_sha1_init_Vz(&sctx);
@@ -291,8 +283,7 @@ int append_private_properties(
                     }
 
                 case 3: {
-                        unsigned char thash[24];
-                        unsigned char rihash[16];
+                        unsigned char thash[24], rihash[16];
                         tiger_ctx tctx;
                         struct ampheck_ripemd128 rctx;
                         rhash_tiger_init_Vz(&tctx);
@@ -318,8 +309,7 @@ int append_private_properties(
                     }
 
                 case 4: {
-                        unsigned char thash[24];
-                        unsigned char shash[20];
+                        unsigned char thash[24], shash[20];
                         tiger_ctx tctx;
                         sha1_ctx sctx;
                         rhash_tiger_init_Vz(&tctx);
@@ -373,28 +363,36 @@ int append_private_properties(
          *  }
          */
     }
+
     MAKE_PRIVATE_PROPERTY(32, 0x39) {
         PUT_STRING_WITH_PADDING(app_info->service_name, 32);
     }
+
     MAKE_PRIVATE_PROPERTY(64, 0x54) {
         // disk id (nothing for privacy)
-        PUT_STRING_WITH_PADDING("MX_00000000000030368", 64);
+        PUT_STRING_WITH_PADDING("", 64);
     }
+
     MAKE_PRIVATE_PROPERTY(0, 0x55) {
     }
+
     MAKE_PRIVATE_PROPERTY(1, 0x62) {
         PUT_U8(0x00);
     }
+
     MAKE_PRIVATE_PROPERTY(1, 0x70) {
         // os bits, we choose to always be 64bit
         PUT_U8(64);
     }
+
     MAKE_PRIVATE_PROPERTY(strlen("RG-SU For Linux V1.30") + 1, 0x6F) {
         PUT_STRING_WITH_NULL("RG-SU For Linux V1.30");
     }
+
     MAKE_PRIVATE_PROPERTY(1, 0x79) {
         PUT_U8(0x02);
     }
+
 #undef MAKE_PRIVATE_PROPERTY
 #undef CHECK_BUFSIZ
 #undef PUT_STRING_WITH_NULL

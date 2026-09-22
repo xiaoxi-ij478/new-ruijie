@@ -1,9 +1,18 @@
 #include "common.h"
 
+static struct AppInfo app_info;
+static int sig_pipe[2] = { -1, -1 };
+
+void handle_sigint(int sig)
+{
+    char i = 0;
+    write(sig_pipe[1], &i, 1);
+}
+
 int main(int argc, char *argv[])
 {
     int ret = EXIT_FAILURE;
-    struct AppInfo app_info = { -1 };
+    app_info.ether_socket = -1;
     app_info.send_addr.sll_family = AF_PACKET;
     app_info.send_addr.sll_protocol = htons(ETH_P_PAE);
     app_info.send_addr.sll_addr[0] = 0x01;
@@ -48,7 +57,10 @@ int main(int argc, char *argv[])
     if (!app_info.service_name)
         app_info.service_name = "";
 
-    // we assume the env has already done dhcp
+    if (pipe(sig_pipe) == -1) {
+        perror("pipe");
+        goto err;
+    }
 
     if (
         (app_info.ether_socket = socket(AF_PACKET, SOCK_DGRAM, htons(ETH_P_PAE))) == -1
@@ -61,8 +73,10 @@ int main(int argc, char *argv[])
         (
             app_info.send_addr.sll_ifindex = if_nametoindex(app_info.net_interface_name)
         ) == -1
-    )
+    ) {
+        perror("could not get if index");
         goto err;
+    }
 
     if (
         bind(
@@ -93,8 +107,80 @@ int main(int argc, char *argv[])
     if (stage3(&app_info) == -1)
         goto err;
 
+    struct sigaction sigact;
+    sigact.sa_handler = handle_sigint;
+    sigact.sa_flags = SA_RESTART;
+    sigaction(SIGINT, &sigact, NULL);
+    // keep it SIMPLE for now
+    assert(!app_info.direct_comm_info.sam_hello_interval);
+    assert(!app_info.hello_info.hello_enabled);
+    struct SendRecvBuffer *srbuf = alloc_srbuf(0, 2000);
+
+    while (true) {
+        srbuf->recvbuflen = 0;
+        struct sockaddr_ll raddr;
+        fd_set fdset;
+        FD_ZERO(&fdset);
+        FD_SET(app_info.ether_socket, &fdset);
+        FD_SET(sig_pipe[0], &fdset);
+
+        if (
+            select(
+                MAX(app_info.ether_socket, sig_pipe[0]) + 1,
+                &fdset,
+                NULL,
+                NULL,
+                NULL
+            ) == -1 &&
+            errno != EINTR // maybe by SIGINT
+        ) {
+            perror("select");
+            goto err;
+        }
+
+        if (FD_ISSET(sig_pipe[0], &fdset)) {
+            puts("logging off");
+            app_info.logout_reason = 1;
+            stage4(&app_info);
+            break;
+        }
+
+        if (FD_ISSET(app_info.ether_socket, &fdset)) {
+            int l = recv_ether_packet(
+                        app_info.ether_socket,
+                        &raddr,
+                        srbuf->recvbuf,
+                        srbuf->recvbufsiz
+                    );
+
+            if (l == -1)
+                goto err;
+
+            if (
+                l < (sizeof(struct IEEE8021XPacketHeader) + sizeof(struct EAPPacketHeader))
+            ) {
+                fputs("short packet read\n", stderr);
+                continue;
+            }
+
+            if (
+                srbuf->recvbuf_ieee8021x->header.type == IEEE8021X_EAP_PACKET &&
+                srbuf->recvbuf_eap->header.status_code == EAP_CODE_FAILURE
+            ) {
+                puts("remote forced us to go offline");
+                break;
+            }
+        }
+    }
+
     ret = 0;
 err:
+
+    if (sig_pipe[0] != -1)
+        close(sig_pipe[0]);
+
+    if (sig_pipe[1] != -1)
+        close(sig_pipe[1]);
 
     if (app_info.ether_socket != -1)
         close(app_info.ether_socket);

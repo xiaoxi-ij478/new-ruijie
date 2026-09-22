@@ -1,14 +1,13 @@
 #ifndef RC4_H_INCLUDED
 #define RC4_H_INCLUDED
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void re_S(unsigned char *S);
-void re_T(unsigned char *T, const unsigned char *key);
-void re_Sbox(unsigned char *S, unsigned char *T);
-void RC4(unsigned char *text, const unsigned char *key, int txtlen);
+void RC4(uint8_t *text, const uint8_t *key, int txtlen);
 
 #ifdef __cplusplus
 }

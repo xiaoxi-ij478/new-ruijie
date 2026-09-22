@@ -71,7 +71,7 @@ void ampheck_ripemd128_init_Vz(struct ampheck_ripemd128 *ctx)
 	ctx->length = 0;
 }
 
-void ampheck_ripemd128_transform(struct ampheck_ripemd128 *ctx, const uint8_t *data, size_t blocks)
+static void ampheck_ripemd128_transform(struct ampheck_ripemd128 *ctx, const uint8_t *data, size_t blocks)
 {
 	for (size_t i = 0; i < blocks; ++i)
 	{
@@ -246,7 +246,7 @@ void ampheck_ripemd128_transform(struct ampheck_ripemd128 *ctx, const uint8_t *d
 }
 
 /* modified */
-void ampheck_ripemd128_transform_Vz(struct ampheck_ripemd128 *ctx, const uint8_t *data, size_t blocks)
+static void ampheck_ripemd128_transform_Vz(struct ampheck_ripemd128 *ctx, const uint8_t *data, size_t blocks)
 {
 	for (size_t i = 0; i < blocks; ++i)
 	{
@@ -355,7 +355,7 @@ void ampheck_ripemd128_transform_Vz(struct ampheck_ripemd128 *ctx, const uint8_t
 		RIPEMD128_PRC_Vz(5, 6, 7, 4, 0x5a82798a, w[ 4],  5, 5);
 		RIPEMD128_PRC_Vz(4, 5, 6, 7, 0x5a82798a, w[13],  7, 5);
 		RIPEMD128_PRC_Vz(7, 4, 5, 6, 0x5a82798a, w[ 6],  7, 5);
-		RIPEMD128_PRC_Vz(6, 7, 4, 5, 0xBCDCB1F9, w[15],  8, 5);
+		RIPEMD128_PRC_Vz(6, 7, 4, 5, 0xbcdcb1f9, w[15],  8, 5);
 		RIPEMD128_PRC_Vz(5, 6, 7, 4, 0x5a82798a, w[ 8], 11, 5);
 		RIPEMD128_PRC_Vz(4, 5, 6, 7, 0x5a82798a, w[ 1], 14, 5);
 		RIPEMD128_PRC_Vz(7, 4, 5, 6, 0x5a82798a, w[10], 14, 5);

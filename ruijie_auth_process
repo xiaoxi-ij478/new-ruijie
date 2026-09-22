@@ -518,7 +518,7 @@ with retry {
                             u32 reconnect interval (in mins)
                             break
                         case 0x59:
-                            u32 sam hello interval
+                            u32 sam hello interval (in secs)
                             break
                         case 0x5A:
                             u32 sam port

@@ -1,15 +1,15 @@
 #include <string.h>
 #include "rc4.h"
 
-static void swap(unsigned char *s1, unsigned char *s2)
+static inline void swap(uint8_t *s1, uint8_t *s2)
 {
-    unsigned char temp;
+    uint8_t temp;
     temp = *s1;
     *s1 = *s2;
     *s2 = temp;
 }
 
-void re_S(unsigned char *S)
+static void re_S(uint8_t *S)
 {
     int i;
 
@@ -17,17 +17,17 @@ void re_S(unsigned char *S)
         S[i] = i;
 }
 
-void re_T(unsigned char *T, const unsigned char *key)
+static void re_T(uint8_t *T, const uint8_t *key)
 {
     int i;
     int keylen;
-    keylen = strlen((const char *)key);
+    keylen = strlen(key);
 
     for (i = 0; i < 256; i++)
         T[i] = key[i % keylen];
 }
 
-void re_Sbox(unsigned char *S, unsigned char *T)
+static void re_Sbox(uint8_t *S, uint8_t *T)
 {
     int i;
     int j = 0;
@@ -38,11 +38,11 @@ void re_Sbox(unsigned char *S, unsigned char *T)
     }
 }
 
-void RC4(unsigned char *text, const unsigned char *key, int txtlen)
+void RC4(uint8_t *text, const uint8_t *key, int txtlen)
 {
-    unsigned char S[256] = { 0 };
+    uint8_t S[256] = { 0 };
     int i, k, l;
-    unsigned char T[256] = { 0 };
+    uint8_t T[256] = { 0 };
     re_S(S);
     re_T(T, key);
     re_Sbox(S, T);
@@ -54,7 +54,7 @@ void RC4(unsigned char *text, const unsigned char *key, int txtlen)
         l += S[i];
         l &= 255;
         swap(&S[i], &S[l]);
-        text[k] = text[k] ^ S[(S[i] + S[l]) & 255];
+        text[k] ^= S[(S[i] + S[l]) & 255];
         k++;
 //        text[k] = text[k] ^ S[i];
 //        i = (i + 1) % 256;

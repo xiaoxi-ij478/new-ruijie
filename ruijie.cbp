@@ -22,10 +22,11 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-flto" />
-					<Add option="-Os" />
+					<Add option="-O2" />
 				</Compiler>
 				<Linker>
 					<Add option="-flto" />
+					<Add option="-O2" />
 					<Add option="-s" />
 				</Linker>
 			</Target>
@@ -39,9 +40,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="direct_comm.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="eap.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="encrypt/d3des.c">

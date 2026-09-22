@@ -8,6 +8,9 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <errno.h>
+#include <signal.h>
+
+#include <endian.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -27,6 +30,9 @@
 #include "hash/tiger.h"
 #include "hash/sha1.h"
 #include "hash/ripemd128.h"
+
+#include "encrypt/rc4.h"
+#include "encrypt/d3des.h"
 
 enum IEEE8021XPacketType {
     IEEE8021X_EAP_PACKET,
@@ -78,10 +84,11 @@ struct __attribute__((packed)) EAPPacket {
     union {
         struct {
             uint8_t type;
-            uint8_t extra[];
+            uint8_t extra[0];
         } with_type;
+
         struct {
-            uint8_t extra[];
+            uint8_t extra[0];
         } without_type;
     };
 };
@@ -94,6 +101,22 @@ struct SendRecvBuffer {
     unsigned sendbufsiz, recvbufsiz;
 };
 
+struct HelloInfo {
+    bool hello_enabled;
+    unsigned hello_id;
+    unsigned hello_interval;
+};
+
+struct DirectCommInfo {
+    unsigned sam_hello_interval;
+    struct sockaddr_in sam_addr;
+    uint8_t sam_encrypt_key[8];
+    uint8_t sam_encrypt_iv[8];
+    uint64_t sam_server_utc_timestamp;
+    unsigned char sam_direct_comm_supported_highest_version;
+    unsigned char sam_direct_comm_heartbeat_flags;
+};
+
 struct AppInfo {
     int ether_socket;
     struct sockaddr_ll send_addr;
@@ -101,12 +124,14 @@ struct AppInfo {
     char *password;
     char *service_name;
     char *net_interface_name;
-    unsigned char md5_challenge[16];
+    uint8_t md5_challenge[16];
     unsigned current_stage;
     unsigned logout_reason;
-    unsigned char last_recv_eap_id;
+    uint8_t last_recv_eap_id;
     bool should_encrypt_password_in_md5_response;
     bool responsing_md5_challenge;
+    struct HelloInfo hello_info;
+    struct DirectCommInfo direct_comm_info;
 };
 
 static inline struct IEEE8021XPacket *get_ieee8021x_packet(void *buf)
@@ -116,7 +141,7 @@ static inline struct IEEE8021XPacket *get_ieee8021x_packet(void *buf)
 
 static inline struct EAPPacket *get_eap_packet(void *buf)
 {
-    return (struct EAPPacket *)((struct IEEE8021XPacket *)buf)->extra;
+    return (struct EAPPacket *)get_ieee8021x_packet(buf)->extra;
 }
 
 static inline struct SendRecvBuffer *alloc_srbuf(
@@ -127,8 +152,8 @@ static inline struct SendRecvBuffer *alloc_srbuf(
     struct SendRecvBuffer *ret = malloc(sizeof(struct SendRecvBuffer));
     assert((ret->recvbuf = calloc(1, sendsz)));
     assert((ret->sendbuf = calloc(1, sendsz)));
-    ret->sendbuf_ieee8021x=get_ieee8021x_packet(ret->sendbuf);
-    ret->recvbuf_ieee8021x=get_ieee8021x_packet(ret->recvbuf);
+    ret->sendbuf_ieee8021x = get_ieee8021x_packet(ret->sendbuf);
+    ret->recvbuf_ieee8021x = get_ieee8021x_packet(ret->recvbuf);
     ret->sendbuf_eap = get_eap_packet(ret->sendbuf);
     ret->recvbuf_eap = get_eap_packet(ret->recvbuf);
     ret->sendbufsiz = sendsz;
@@ -165,6 +190,7 @@ extern const unsigned char heart_beat_array[6784];
 int stage1(struct AppInfo *app_info);
 int stage2(struct AppInfo *app_info);
 int stage3(struct AppInfo *app_info);
+int stage4(struct AppInfo *app_info);
 int get_interface_hwaddr(const char *name, struct sockaddr *ret);
 int get_interface_addr(const char *name, struct IPInfo *ret);
 int send_ether_packet(

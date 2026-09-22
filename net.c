@@ -18,8 +18,6 @@ int get_interface_hwaddr(const char *name, struct sockaddr *ret)
 
     strncpy(ifr.ifr_name, name, IFNAMSIZ);
 
-    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-
     if (ioctl(s, SIOCGIFHWADDR, &ifr) < 0) {
         perror("could not get interface hardware address");
         close(s);
@@ -254,7 +252,6 @@ int recv_ether_packet_with_timeout(
                             (struct sockaddr *)srcaddr,
                             &saddr_siz
                         );
-    assert(saddr_siz == sizeof(*srcaddr));
 
     if (real_recvsize == -1) {
         perror("recvfrom");
