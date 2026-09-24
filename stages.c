@@ -364,10 +364,11 @@ int stage3(struct AppInfo *app_info)
 
     {
         VERIFY_PROPERTY_MAGIC_AND_SKIP;
+        app_info->hello_info.hello_enabled = srbuf->recvbuf_eap->without_type.extra[current_pos + 1];
         printf(
             "remote report proxy detection is %svalid and %senabled\n",
             srbuf->recvbuf_eap->without_type.extra[current_pos] ? "" : "in",
-            srbuf->recvbuf_eap->without_type.extra[current_pos + 1] ? "" : "not "
+            app_info->hello_info.hello_enabled ? "" : "not "
         );
         current_pos += 2;
     }
