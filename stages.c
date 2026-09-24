@@ -364,11 +364,10 @@ int stage3(struct AppInfo *app_info)
 
     {
         VERIFY_PROPERTY_MAGIC_AND_SKIP;
-        app_info->hello_info.hello_enabled = srbuf->recvbuf_eap->without_type.extra[current_pos + 1];
         printf(
             "remote report proxy detection is %svalid and %senabled\n",
             srbuf->recvbuf_eap->without_type.extra[current_pos] ? "" : "in",
-            app_info->hello_info.hello_enabled ? "" : "not "
+            srbuf->recvbuf_eap->without_type.extra[current_pos + 1] ? "" : "not "
         );
         current_pos += 2;
     }
@@ -387,9 +386,10 @@ int stage3(struct AppInfo *app_info)
         VERIFY_PROPERTY_MAGIC_AND_SKIP;
         assert(srbuf->recvbuf_eap->without_type.extra[current_pos] == 10);
         current_pos++;
+        app_info->hello_info.hello_enabled = srbuf->recvbuf_eap->without_type.extra[current_pos];
         printf(
             "remote report eap hello %s enabled, with id %#x and interval %u secs\n",
-            srbuf->recvbuf_eap->without_type.extra[current_pos] ? "" : "not",
+            app_info->hello_info.hello_enabled ? "" : "not",
             ntohl(*(uint32_t *)&srbuf->recvbuf_eap->without_type.extra[current_pos + 1]),
             ntohl(*(uint32_t *)&srbuf->recvbuf_eap->without_type.extra[current_pos + 5])
         );
