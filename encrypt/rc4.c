@@ -33,7 +33,7 @@ static void re_Sbox(uint8_t *S, uint8_t *T)
     int j = 0;
 
     for (i = 0; i < 256; i++) {
-        j = (j + S[i] + T[i]) % 256;
+        j = (j + S[i] + T[i]) & 255;
         swap(&S[i], &S[j]);
     }
 }
@@ -41,7 +41,7 @@ static void re_Sbox(uint8_t *S, uint8_t *T)
 void RC4(uint8_t *text, const uint8_t *key, int txtlen)
 {
     uint8_t S[256] = { 0 };
-    int i, k, l;
+    uint8_t i, k, l;
     uint8_t T[256] = { 0 };
     re_S(S);
     re_T(T, key);
@@ -49,15 +49,8 @@ void RC4(uint8_t *text, const uint8_t *key, int txtlen)
     i = k = l = 0;
 
     while (k < txtlen) {
-        i++;
-        i &= 255;
-        l += S[i];
-        l &= 255;
+        l += S[++i];
         swap(&S[i], &S[l]);
-        text[k] ^= S[(S[i] + S[l]) & 255];
-        k++;
-//        text[k] = text[k] ^ S[i];
-//        i = (i + 1) % 256;
-//        k++;
+        text[k++] ^= S[(S[i] + S[l]) & 255];
     }
 }
