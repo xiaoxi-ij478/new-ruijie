@@ -3,7 +3,7 @@
 static struct AppInfo app_info;
 static int sig_pipe[2] = { -1, -1 };
 
-void handle_sigint(int sig)
+static void handle_sigint(int sig)
 {
     char i = 0;
     write(sig_pipe[1], &i, 1);
