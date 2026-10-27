@@ -110,7 +110,7 @@ int get_interface_addr(const char *name, struct IPInfo *ret)
 
     FILE *ifinet6fp = fopen("/proc/net/if_inet6", "r");
 
-    if (!routefp) {
+    if (!ifinet6fp) {
         perror("could not open if_inet6 file");
         close(s);
         return -1;
